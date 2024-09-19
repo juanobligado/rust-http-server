@@ -5,11 +5,13 @@ use std::fmt::{Debug, Display, Formatter};
 use std::fmt::Result as FmtResult;
 use std::str::Utf8Error;
 use std::str;
+use super::{QueryString, QueryStringValue};
 use crate::http::method::MethodError;
 
+#[derive(Debug)]
 pub struct Request<'buffer> {
     path: &'buffer str,
-    query_string: Option<&'buffer str>,
+    query_string: Option<QueryString<'buffer>>,
     method: Method,
 }
 
@@ -31,7 +33,7 @@ impl<'buffer> TryFrom<&'buffer[u8]> for Request<'buffer> {
         let method: Method = method.parse()?;
         let mut query_string = None;
         if let Some(i) = path.find('?') {
-            query_string = Some(&path[i + 1..]);
+            query_string = Some(QueryString::from(&path[i + 1..]) );
             path = &path[..i];
         }
         Ok(Self{

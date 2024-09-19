@@ -27,6 +27,7 @@ impl Server {
                             match Request::try_from(&buffer[..]) {
                                 Ok(request) => {
                                     // if the request is valid, we print the request
+                                    dbg!(request);
                                 }
                                 Err(e) => {
                                     // if the request is invalid, we print the error
