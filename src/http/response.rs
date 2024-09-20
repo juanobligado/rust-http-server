@@ -1,5 +1,6 @@
 use std::fmt::{Display, Formatter, Result as FmtResult};
-use std::net::Shutdown::Write;
+use std::net::TcpStream;
+use std::io::{ Write, Result as IoResult};
 use super::StatusCode;
 
 pub struct Response {
@@ -13,21 +14,18 @@ impl Response {
             body,
         }
     }
-    pub fn status_line(&self) -> String {
-        format!("HTTP/1.1 {} {}\r\n", self.status_code as u16, self.status_code.reason_phrase())
-    }
-}
-
-impl Display for Response {
-    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+    pub fn send(&self, stream: &mut TcpStream) -> IoResult<()> {
         let body = match &self.body {
             Some(b) => b,
             None => ""
         };
-        write!(f,
-               "HTTP/1.1 {} {}\r\n\r\n{}",
-               self.status_code,
-               self.status_code.reason_phrase(),
-               body)
+        write!(
+            stream,
+            "HTTP/1.1 {} {}\r\n\r\n{}",
+            self.status_code,
+            self.status_code.reason_phrase(),
+            body
+        )
     }
+
 }

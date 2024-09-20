@@ -24,17 +24,23 @@ impl Server {
                     match _socket.read(&mut buffer) {
                         Ok(_) => {
                             println!("Received a request: {}", String::from_utf8_lossy(&buffer));
-                            match Request::try_from(&buffer[..]) {
+                            let response = match Request::try_from(&buffer[..]) {
                                 Ok(request) => {
                                     // if the request is valid, we print the request
                                     dbg!(request);
-                                    let response = Response::new(StatusCode::Ok, Some("<h1>It works!</h1>".to_string()));
-                                    write!(_socket, "{}", response);
+                                    Response::new(
+                                        StatusCode::Ok,
+                                        Some("<h1>It works!</h1>".to_string())
+                                    )
                                 }
                                 Err(e) => {
                                     // if the request is invalid, we print the error
-                                    eprintln!("Failed to parse a request: {}", e);
+                                    println!("Failed to parse a request: {}", e);
+                                    Response::new(StatusCode::BadRequest, None)
                                 }
+                            };
+                            if let Err(e) = response.send(&mut _socket){
+                                eprintln!("Failed to send response: {}", e);
                             }
                         }
                         Err(e) => {
