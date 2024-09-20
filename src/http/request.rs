@@ -1,11 +1,11 @@
-use super::{method, request, Method};
+use super::{ Method};
 use std::convert::TryFrom;
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 use std::fmt::Result as FmtResult;
 use std::str::Utf8Error;
 use std::str;
-use super::{QueryString, QueryStringValue};
+use super::{QueryString};
 use crate::http::method::MethodError;
 
 #[derive(Debug)]
@@ -15,6 +15,19 @@ pub struct Request<'buffer> {
     method: Method,
 }
 
+impl<'buffer> Request<'buffer>{
+    pub fn path(&self) -> &str {
+        self.path
+    }
+
+    pub fn method(&self) -> &Method {
+        &self.method
+    }
+
+    pub fn query_string(&self) -> Option<&QueryString<'buffer>> {
+        self.query_string.as_ref()
+    }
+}
 // We implement trait TryFrom<&[u8]> for Request to convert a buffer of bytes into a Request instance.
 impl<'buffer> TryFrom<&'buffer[u8]> for Request<'buffer> {
     type Error = ParseError;
@@ -25,7 +38,7 @@ impl<'buffer> TryFrom<&'buffer[u8]> for Request<'buffer> {
         let request = str::from_utf8(buffer)?;
         let (method,request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
         let (mut path,request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
-        let (protocol,request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
+        let (protocol,_) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
         if protocol != "HTTP/1.1"{
             return Err(ParseError::InvalidProtocol)
         }

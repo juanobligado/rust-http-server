@@ -1,7 +1,19 @@
-use crate::http::{ Request, Response, StatusCode};
+use crate::http::{ParseError, Request, Response, StatusCode};
 use std::convert::TryFrom;
-use std::io::{Read, Write};
+use std::io::{Read};
 use std::net::TcpListener;
+
+pub trait Handler {
+    fn handle_request(&mut self, request: &Request) -> Response;
+    fn handle_bad_request(&mut self, e: &ParseError) -> Response {
+        println!("Failed to parse a request: {}", e);
+        Response::new(StatusCode::BadRequest, None)
+    }
+}
+
+impl dyn Handler {
+
+}
 pub struct Server {
     address: String,
 }
@@ -13,11 +25,11 @@ impl Server {
         }
     }
 
-    pub fn listen(&self) {
+    pub fn listen(&self, mut handler: impl Handler) {
         let listener = TcpListener::bind(&self.address).unwrap();
         println!("Listening on {}", self.address);
         // infinite loop
-        'main_loop: loop {
+        loop {
             match listener.accept() {
                 Ok((mut _socket, _addr)) => {
                     let mut buffer = [0; 1024];
@@ -26,17 +38,10 @@ impl Server {
                             println!("Received a request: {}", String::from_utf8_lossy(&buffer));
                             let response = match Request::try_from(&buffer[..]) {
                                 Ok(request) => {
-                                    // if the request is valid, we print the request
-                                    dbg!(request);
-                                    Response::new(
-                                        StatusCode::Ok,
-                                        Some("<h1>It works!</h1>".to_string())
-                                    )
+                                    handler.handle_request(&request)
                                 }
                                 Err(e) => {
-                                    // if the request is invalid, we print the error
-                                    println!("Failed to parse a request: {}", e);
-                                    Response::new(StatusCode::BadRequest, None)
+                                    handler.handle_bad_request(&e)
                                 }
                             };
                             if let Err(e) = response.send(&mut _socket){
