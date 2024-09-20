@@ -1,6 +1,6 @@
-use crate::http::Request;
+use crate::http::{ Request, Response, StatusCode};
 use std::convert::TryFrom;
-use std::io::Read;
+use std::io::{Read, Write};
 use std::net::TcpListener;
 pub struct Server {
     address: String,
@@ -28,6 +28,8 @@ impl Server {
                                 Ok(request) => {
                                     // if the request is valid, we print the request
                                     dbg!(request);
+                                    let response = Response::new(StatusCode::Ok, Some("<h1>It works!</h1>".to_string()));
+                                    write!(_socket, "{}", response);
                                 }
                                 Err(e) => {
                                     // if the request is invalid, we print the error
